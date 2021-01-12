@@ -167,16 +167,11 @@ def build_spec(app, loop):
             for consumer in route_spec.consumes:
                 spec = serialize_schema(consumer.field)
                 route_param = {}
+
                 if "properties" in spec:
-                    for name, prop_spec in spec["properties"].items():
-                        route_param = {
-                            **prop_spec,
-                            "required": consumer.required,
-                            "in": consumer.location,
-                            "name": name,
-                        }
+                    route_param.update({"required": consumer.required, "in": consumer.location, "schema": spec})
                 else:
-                    route_param = {
+                    route_param.update({
                         **spec,
                         "required": consumer.required,
                         "in": consumer.location,
@@ -184,7 +179,7 @@ def build_spec(app, loop):
                         if not isinstance(consumer.field, type)
                         and hasattr(consumer.field, "name")
                         else "body",
-                    }
+                    })
 
                 if "$ref" in route_param:
                     route_param["schema"] = {"$ref": route_param["$ref"]}
