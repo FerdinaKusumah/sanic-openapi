@@ -76,20 +76,23 @@ def build_spec(app, loop):
     # --------------------------------------------------------------- #
 
     for blueprint in app.blueprints.values():
-        if hasattr(blueprint, "routes"):
-            for route in blueprint.routes:
-                if hasattr(route.handler, "view_class"):
-                    # class based view
-                    view = route.handler.view_class
-                    for http_method in route.methods:
-                        _handler = getattr(view, http_method.lower(), None)
-                        if _handler:
-                            route_spec = route_specs[_handler]
-                            route_spec.blueprint = blueprint
-                            if not route_spec.tags:
-                                route_spec.tags.append(blueprint.name)
-                else:
-                    route_spec = route_specs[route.handler]
+        if not hasattr(blueprint, "routes"):
+            continue
+
+        for route in blueprint.routes:
+            if not hasattr(route.handler, "view_class"):
+                route_spec = route_specs[route.handler]
+                route_spec.blueprint = blueprint
+                if not route_spec.tags:
+                    route_spec.tags.append(blueprint.name)
+                continue
+
+            # class based view
+            view = route.handler.view_class
+            for http_method in route.methods:
+                _handler = getattr(view, http_method.lower(), None)
+                if _handler:
+                    route_spec = route_specs[_handler]
                     route_spec.blueprint = blueprint
                     if not route_spec.tags:
                         route_spec.tags.append(blueprint.name)
@@ -163,6 +166,7 @@ def build_spec(app, loop):
 
             for consumer in route_spec.consumes:
                 spec = serialize_schema(consumer.field)
+                route_param = {}
                 if "properties" in spec:
                     for name, prop_spec in spec["properties"].items():
                         route_param = {
